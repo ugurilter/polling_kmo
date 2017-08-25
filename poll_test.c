@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 		if (revents & POLLIN) {
 			printf("Poll woke up...\n");
 			n = read(poll_fd.fd, buffer, sizeof(buffer));
-			printf("ReturnEvent=%d, POLLIN n=%d buf=%.*s", revents, n, n, buffer);
+			printf("POLLIN - Message = %.*s",  n, buffer);
 		}
 
 	}

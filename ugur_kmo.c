@@ -1,16 +1,9 @@
 #include <linux/init.h>	
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/errno.h>
-#include <linux/fs.h>
-#include <linux/jiffies.h>
 #include <linux/printk.h>
 #include <linux/wait.h>
 #include <linux/poll.h>
-#include <linux/proc_fs.h>
-#include <linux/seq_file.h>
-#include <asm/uaccess.h>
-#include <uapi/linux/stat.h>
 
 #define DRIVER_AUTHOR	"Ugur ILTER <ugur.ilter@airties.com>"
 #define DRIVER_DESC	"Character device module."
@@ -29,7 +22,7 @@ static void __exit ugur_exit(void);
 /* Global variables */
 static char *msg_Ptr;
 static char my_msg[BUF_LEN];
-static int len;
+static int flag;
 static wait_queue_head_t wait_queue;
 
 static char *name;
@@ -47,46 +40,39 @@ static const struct file_operations fops = {
 
 static ssize_t device_read(struct file *file, char __user * buffer, size_t length, loff_t * offset)
 {
-	int bytes_read = 0;
+	int bytes_read = length;
 
         if (*msg_Ptr == 0) return 0;
 
 	/* msg from kspace -> uspace */
-        while (length && *msg_Ptr) {
-                put_user(*(msg_Ptr++), buffer++); // (val, dest addr)
-                length--;
-		len--;
-                bytes_read++;
-        }
+	copy_to_user(buffer, msg_Ptr, length);
+
+	/* clear flag */
+	flag = 0;
 
         return bytes_read;
 }
 
 static ssize_t device_write(struct file *file, const char __user * buffer, size_t length, loff_t * offset)
 {
-	int i;
-
-	/* Clearing buffer */
-	for(i = 0; i < BUF_LEN; i++) my_msg[i] = 0;
-
 	/* msg from uspace -> kspace */
-	for (i = 0; i < length && i < BUF_LEN; i++){
-		get_user(my_msg[i], buffer + i); // (var, src addr)
-		len++;
-	}
+	copy_from_user(&my_msg, buffer, length);
+
+	/* set flag */
+	flag = 1;
 
 	msg_Ptr = my_msg;
 
 	wake_up_interruptible(&wait_queue);
 
-	return i;
+	return length;
 }
 
 static unsigned int device_poll(struct file *file, poll_table *wait)
 {
 	poll_wait(file, &wait_queue, wait);
 
-	if (len > 0) return POLLIN | POLLRDNORM;
+	if (flag) return POLLIN | POLLRDNORM;
 
 	return 0;
 }
