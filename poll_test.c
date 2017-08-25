@@ -40,8 +40,8 @@ int main(int argc, char **argv) {
 		/* If there is anything to read (POLLIN event), read the buffer and print */
 		if (revents & POLLIN) {
 			printf("Poll woke up...\n");
-			n = read(poll_fd.fd, buffer, sizeof(buffer));
-			printf("POLLIN - Message = %.*s", n, buffer);
+			n = read(poll_fd.fd, buffer, 1);
+			printf("POLLIN - Char = %d,%c \n",  n, buffer[0]);
 		}
 
 	}

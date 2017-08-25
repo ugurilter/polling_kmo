@@ -19,8 +19,6 @@
 /* Prototypes */
 static unsigned int device_poll(struct file *file, poll_table *wait);
 static ssize_t device_read(struct file *file, char __user * buffer, size_t length, loff_t * offset);
-static ssize_t device_write(struct file *file, const char __user * buffer, size_t length, loff_t * offset);
-static ssize_t read_proc(struct file *file, char __user * buffer, size_t length, loff_t * offset);
 static ssize_t write_proc(struct file *file, const char __user * buffer, size_t length, loff_t * offset);
 static int __init ugur_init(void);
 static void __exit ugur_exit(void);
@@ -28,7 +26,6 @@ static void __exit ugur_exit(void);
 /* Global variables */
 static char *msg_Ptr;
 static char my_msg[BUF_LEN];
-static int flag = 0;
 static wait_queue_head_t wait_queue;
 struct proc_dir_entry *proc_dentry;
 static int msg_len = 0;
@@ -53,10 +50,12 @@ static ssize_t device_read(struct file *file, char __user * buffer, size_t lengt
 {
 	int bytes_read = length > msg_len ? msg_len : length;
 
+	printk("Device Read - %d\n", bytes_read);	
+
         if (msg_len == 0) return 0;
 
 	/* msg from kspace -> uspace */
-	copy_to_user(buffer, my_msg, bytes_read);
+	copy_to_user(buffer, msg_Ptr++, bytes_read);
 	msg_len -= bytes_read;
 
         return bytes_read;
@@ -64,8 +63,9 @@ static ssize_t device_read(struct file *file, char __user * buffer, size_t lengt
 
 static unsigned int device_poll(struct file *file, poll_table *wait)
 {
-
-	if (msg_len == 0) poll_wait(file, &wait_queue, wait);
+	printk("Entering device poll\n");
+	poll_wait(file, &wait_queue, wait);
+	printk("After device poll\n");
 
 	if (msg_len) return POLLIN | POLLRDNORM;
 
@@ -77,6 +77,7 @@ static ssize_t write_proc(struct file *file, const char __user * buffer, size_t 
 	printk("%s,%d buffer %d \n",__func__,__LINE__,length);
 	copy_from_user(&my_msg, buffer, length);
 	msg_len=length;
+	msg_Ptr = my_msg;
 	wake_up_interruptible(&wait_queue);
 	return length;
 }
