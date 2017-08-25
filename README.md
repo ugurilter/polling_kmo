@@ -1,3 +1,5 @@
+## HOW-TO
+
 1. make clean all
 2. ./install.sh
 3. gcc poll_test.c -o poll_test
