@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #define device	"/dev/char_device"
-#define proc	"/proc/char_device"
 
 int main(int argc, char **argv) {
 	char buffer[256];
@@ -42,7 +41,7 @@ int main(int argc, char **argv) {
 		if (revents & POLLIN) {
 			printf("Poll woke up...\n");
 			n = read(poll_fd.fd, buffer, sizeof(buffer));
-			printf("POLLIN - Message = %.*s",  n, buffer);
+			printf("POLLIN - Message = %.*s", n, buffer);
 		}
 
 	}
