@@ -55,6 +55,10 @@ static ssize_t device_read(struct file *file, char __user * buffer, size_t lengt
 
 static ssize_t device_write(struct file *file, const char __user * buffer, size_t length, loff_t * offset)
 {
+	int i;
+	/* Clean the buffer */
+	for(i = 0; i < BUF_LEN; i++) my_msg[i] = 0;
+
 	/* msg from uspace -> kspace */
 	copy_from_user(&my_msg, buffer, length);
 
